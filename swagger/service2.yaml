@@ -1,0 +1,287 @@
+openapi: 3.0.0
+info:
+  description: "Лабораторная работа №1. Разработать спецификацию в формате OpenAPI для набора веб-сервисов"
+  title: Сервис-Ориентированная Архитектура
+  version: "1.0"
+servers:
+  - url: 'https://localhost:8080/api/v1'
+tags:
+  - name: Teams
+    description: CRUD операции для объекта Team
+  - name: Extension
+    description: Дополнительные операции
+paths:
+  /teams:
+    post:
+      tags: 
+        - Teams
+      summary: Создать Team
+      description: Создать новый объект Team   
+      requestBody:
+        content:
+          application/xml:
+            schema:
+              $ref: "models.yaml#/components/schemas/Team"
+      responses:
+        "201":
+          description: Успешное создание
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/schemas/Team"
+        "422":
+          description: Необрабатываемая Сущность
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/unprocessableEntityError"
+        "500":
+          description: Ошибка на сервере
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/defaultError"
+    get: 
+      tags:
+        - Teams
+      summary: Получить список Team
+      description: Получить список Team
+      parameters:
+        - $ref: "models.yaml#/components/parameters/limit"
+        - $ref: "models.yaml#/components/parameters/sortTeam"
+        - $ref: "models.yaml#/components/parameters/offset"
+        - $ref: "models.yaml#/components/parameters/filter"
+      responses:
+        "200":
+          description: Объекты получены
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/pageTeam"
+        "400":
+          description: Невалидный запрос
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/badRequestError"
+        "500":
+          description: Ошибка на сервере
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/defaultError"
+  /teams/{id}:
+    get:
+      tags:
+        - Teams
+      summary: Получить Team по id
+      description: Получить информацию об элементе Team по идентификатор
+      parameters:
+        - $ref: "models.yaml#/components/parameters/idTeam"
+      responses:
+        "200":
+          description: Объект получен
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/schemas/Team"
+        "400":
+          description: Невалидный запрос
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/badRequestError"
+        "404":
+          description: Элемент не найден
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/notFoundError"
+              example:
+                message: Team not found
+        "500":
+          description: Ошибка на сервере
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/defaultError"
+    delete:
+      tags: 
+        - Teams
+      summary: Удалить Team по id
+      description: Удалить элемент Team по идентификатору
+      parameters:
+        - $ref: "models.yaml#/components/parameters/idTeam"
+      responses:
+        "204":
+          description: Объект удалён
+        "400":
+          description: Невалидный запрос
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/badRequestError"
+        "404":
+          description: Элемент не найден
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/notFoundError"
+              example:
+                message: Team not found
+        "500":
+          description: Ошибка на сервере
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/defaultError"
+  /teams/{team-id}/join/{humanbeing-id}:
+    patch:
+      tags:
+        - Extension
+      summary: Добавить HumanBeing в Team
+      description: Добавить HumanBeing в Team
+      parameters:
+          - $ref: "models.yaml#/components/parameters/idTeam"
+          - $ref: "models.yaml#/components/parameters/idHumanBeing"
+      responses:
+        "204":
+          description: HumanBeing успешно добавлен в Team
+        "400":
+          description: Невалидный запрос
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/badRequestError"
+        "404":
+          description: Элемент не найден
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/notFoundError"
+              example:
+                message: Team not found
+        "500":
+          description: Ошибка на сервере
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/defaultError"
+        "503":
+          description: Сервер временно недоступен
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/internalError"
+  /teams/{team-id}/unjoin/{humanbeing-id}:
+    delete:
+      tags:
+        - Extension
+      summary: Удалить HumanBeing из Team
+      description: Удалить HumanBeing из Team
+      parameters:
+        - $ref: "models.yaml#/components/parameters/idTeam"
+        - $ref: "models.yaml#/components/parameters/idHumanBeing"
+      responses:
+        "204":
+          description: HumanBeing успешно добавлен в Team
+        "400":
+          description: Невалидный запрос
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/badRequestError"
+        "404":
+          description: Элемент не найден
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/notFoundError"
+              example:
+                message: Team not found
+        "500":
+          description: Ошибка на сервере
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/defaultError"
+        "503":
+          description: Сервер временно недоступен
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/internalError"
+  /teams/{team-id}/car/add:
+    patch:
+      tags:
+        - Extension
+      summary: Обновить автомобили членов команды
+      description: Пересадить всех героев команды, не имеющих крутого автомобиля на крутые "Lada Kalina"
+      parameters:
+        - $ref: "models.yaml#/components/parameters/idTeam"
+      responses:
+        "204":
+          description: Автомобили успешно обновлены
+        "400":
+          description: Невалидный запрос
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/badRequestError"
+        "404":
+          description: Элемент не найден
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/notFoundError"
+              example:
+                message: Team not found
+        "500":
+          description: Ошибка на сервере
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/defaultError"
+        "503":
+          description: Сервер временно недоступен
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/internalError"
+  /team/{team-id}/make-depressive:
+    patch:
+      tags:
+        - Extension
+      summary: Обновить героям команды настроение
+      description: Поменять всем героям команды настроение на максимально печальное
+      parameters:
+        - $ref: "models.yaml#/components/parameters/idTeam"
+      responses:
+        "204":
+          description: Настроения успешно обновлены
+        "400":
+          description: Невалидный запрос
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/badRequestError"
+        "404":
+          description: Элемент не найден
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/notFoundError"
+              example:
+                message: Team not found
+        "500":
+          description: Ошибка на сервере
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/defaultError"
+        "503":
+          description: Сервер временно недоступен
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/internalError"
