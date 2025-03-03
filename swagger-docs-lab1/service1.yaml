@@ -1,0 +1,283 @@
+openapi: 3.0.0
+info:
+  description: "Лабораторная работа №1. Разработать спецификацию в формате OpenAPI для набора веб-сервисов"
+  title: Сервис-Ориентированная Архитектура
+  version: "1.0"
+servers:
+  - url: 'https://localhost:8080/api/v1'
+tags:
+  - name: HumanBeing
+    description: CRUD операции для объекта HumanBeing
+  - name: Extension
+    description: Дополнительные операции
+paths:
+  /humanbeings:
+    post:
+      tags:
+        - HumanBeing
+      summary: Создать HumanBeing
+      description: Создать новый объект HumanBeing
+      requestBody:
+        content:
+          application/xml:
+            schema:
+              $ref: "models.yaml#/components/schemas/HumanBeing"
+      responses:
+        "201":
+          description: Успешное создание
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/schemas/HumanBeing"
+        "422":
+          description: Необрабатываемая Сущность
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/unprocessableEntityError"
+              example:
+                message: "Validation error"
+                field:
+                  - "soundtrackName"
+                  - "minutesOfWaiting"
+        "500":
+          description: Ошибка на сервере
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/defaultError"
+    get:
+      tags:
+        - HumanBeing
+      summary: Получить список HumanBeing
+      description: Получить список HumanBeing
+      parameters:
+        - $ref: "models.yaml#/components/parameters/limit"
+        - $ref: "models.yaml#/components/parameters/sortHumanBeing"
+        - $ref: "models.yaml#/components/parameters/offset"
+        - $ref: "models.yaml#/components/parameters/filter"
+      responses:
+        "200":
+          description: Объекты получены
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/pageHumanBeing"
+        "400":
+          description: Невалидный запрос
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/badRequestError"
+              example:
+                message: "Validation error"
+                fields: "limit, sortHumanBeing"
+        "500":
+          description: Ошибка на сервере
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/defaultError"
+  /humanbeings/{id}:
+    get:
+      tags:
+        - HumanBeing
+      summary: Получить HumanBeing по id
+      description: Получить информацию об элементе HumanBeing по идентификатору
+      parameters:
+        - $ref: "models.yaml#/components/parameters/idHumanBeing"
+      responses:
+        "200":
+          description: Объект получен
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/schemas/HumanBeing"
+        "400":
+          description: Невалидный запрос
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/badRequestError"
+        "404":
+          description: Элемент не найден
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/notFoundError"
+              example:
+                message: HumanBeing not found
+        "500":
+          description: Ошибка на сервере
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/defaultError"
+    delete:
+      tags:
+        - HumanBeing
+      summary: Удалить HumanBeing по id
+      description: Удалить элемент HumanBeing по идентификатору
+      parameters:
+        - $ref: "models.yaml#/components/parameters/idHumanBeing"
+      responses:
+        "204":
+          description: Объект удалён
+        "400":
+          description: Невалидный запрос
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/badRequestError"
+        "404":
+          description: Элемент не найден
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/notFoundError"
+              example:
+                message: HumanBeing not found
+        "500":
+          description: Ошибка на сервере
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/defaultError"
+    put:
+      tags:
+        - HumanBeing
+      summary: Обновить HumanBeing по id
+      description: Обновить объект HumanBeing по идентификатору
+      parameters:
+        - $ref: "models.yaml#/components/parameters/idHumanBeing"
+      requestBody:
+        content:
+          application/xml:
+            schema:
+              $ref: "models.yaml#/components/schemas/HumanBeing"
+      responses:
+        "200":
+          description: Объект изменён
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/schemas/HumanBeing"
+        "404":
+          description: Элемент не найден
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/notFoundError"
+              example:
+                message: HumanBeing not found
+        "422":
+          description: Необрабатываемая Сущность
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/unprocessableEntityError"
+        "500":
+          description: Ошибка на сервере
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/defaultError"
+  /humanbeings/sum/impact:
+    get:
+      tags:
+        - Extension
+      summary: Получить сумму impactSpeed
+      description: Рассчитать сумму значений поля impactSpeed для всех объектов
+      responses:
+        "200":
+          description: Сумма получена
+          content:
+            application/xml:
+              schema:
+                type: integer
+                xml:
+                  name: result
+              example: 5
+        "500":
+          description: Ошибка на сервере
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/defaultError"
+  /humanbeings/amount/soundtrack/less:
+    get:
+      tags:
+        - Extension
+      summary: Получить количество HumanBeing по критерию
+      description: Вернуть количество объектов, значение поля soundtrackName которых меньше заданного
+      parameters:
+        - $ref: "models.yaml#/components/parameters/soundtrackName"
+      responses:
+        "200":
+          description: Количество получено
+          content:
+            application/xml:
+              schema:
+                type: integer
+                xml:
+                  name: result
+              example: 5
+        "400":
+          description: Невалидный запрос
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/badRequestError"
+        "500":
+          description: Ошибка на сервере
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/defaultError"
+  /weapons:
+    get:
+      tags:
+        - Extension
+      summary: Справочник WeaponType
+      description: Справочник WeaponType
+      responses:
+        "200":
+          description: Объекты получены
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/weapon"
+              example:
+                - AXE
+                - PISTOL
+                - KNIFE
+                - MACHINE_GUN
+        "500":
+          description: Ошибка на сервере
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/defaultError"
+  /moods:
+    get:
+      tags:
+        - Extension
+      summary: Справочник MoodType
+      description: Справочник MoodType
+      responses:
+        "200":
+          description: Объекты получены
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/mood"
+              example:
+                - GREAT
+                - OK
+                - DEPRESSIVE
+        "500":
+          description: Ошибка на сервере
+          content:
+            application/xml:
+              schema:
+                $ref: "models.yaml#/components/responses/defaultError"

@@ -1,0 +1,383 @@
+components:
+  schemas:
+    HumanBeing:
+      type: object 
+      required:
+        - id
+        - name 
+        - Coordinates
+        - creationDate
+        - realHero
+        - hasToothpick
+        - impactSpeed
+        - soundtrackName
+        - minutesOfWaiting
+        - weaponType
+        - moodType
+        - car
+      properties:
+        id:
+          type: integer
+          nullable: false
+          description: ID
+          readOnly: true
+          example: 1
+        name:
+          type: string
+          nullable: false
+          description: Имя HumanBeing
+          example: "Eugene"
+        Coordinates:
+          nullable: false
+          $ref: "#/components/schemas/Coordinates"
+        creationDate:
+          type: string
+          format: date-time
+          nullable: false
+          readOnly: true
+          example:
+            - 2024-01-03T14:05:12Z
+        realHero:
+          type: boolean
+          nullable: false
+          description: HumanBeing герой?
+          example: true
+        hasToothpick:
+          type: boolean
+          nullable: false
+          description: HumanBeing имеет зубочистку?
+          example: true
+        impactSpeed:
+          type: integer
+          format: int32
+          nullable: false
+          description: Скорость удара
+          example: 239
+        soundtrackName:
+          type: string
+          nullable: false
+          description: Название саундтрека
+          example: "Music"
+        minutesOfWaiting:
+          type: integer
+          format: int64
+          nullable: false
+          description: Время ожидания в минутах
+          example: 239
+        weaponType:
+          $ref: "#/components/schemas/WeaponType"
+        moodType:
+          $ref: "#/components/schemas/MoodType"
+        car:
+          $ref: "#/components/schemas/Car"
+        teamID:
+          type: integer
+          format: int64
+          nullable: true
+          description: Идентификатор Team
+          example: 239
+    Coordinates:
+      type: object
+      required:
+        - x
+        - y
+      properties:
+        x:
+          type: number
+          format: double
+          nullable: false
+          description: Координата X
+          example: 10.5
+        y:
+          type: number
+          format: float
+          maximum: 252
+          nullable: false
+          description: Координата Y
+          example: 45.5
+    Car:
+      type: object
+      required: 
+        - name
+      properties:
+        name:
+          type: string
+          nullable: false
+          description: Имя Car
+          example: "BMW"
+        cool:
+          type: boolean
+          nullable: true
+          description: Car крутой?
+          example: true
+    WeaponType:
+      type: string
+      description: Тип оружия
+      enum:
+        - AXE
+        - PISTOL
+        - KNIFE
+        - MACHINE_GUN
+    MoodType:
+      type: string
+      description: Настроение
+      enum:
+        - GREAT
+        - OK
+        - DEPRESSIVE
+    Team:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          nullable: false
+          description: ID
+          readOnly: true
+          example: 1
+        name:
+          type: string
+          nullable: false
+          description: Имя Team
+  parameters:
+    idHumanBeing:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: integer
+        format: id
+      example: 1
+    idTeam:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: integer
+        format: id
+      example: 1
+    soundtrackName:
+      in: query
+      name: soundtrackName
+      required: true
+      schema:
+        type: string
+      example: "Music"
+    impactSpeed:
+      in: query
+      name: impactSpeed
+      required: true
+      schema:
+        type: integer
+        format: int32
+      example: 239
+    limit:
+      in: query
+      name: limit
+      required: false
+      schema:
+        type: integer
+      example: 10
+    sortHumanBeing:
+      in: query
+      name: sort
+      required: false
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          default: id
+          enum:
+            - id
+            - name
+            - coordinates.x
+            - coordinates.y
+            - creation_date
+            - realHero
+            - hasToothpich
+            - impactSpeed
+            - soundtrackName
+            - minutesOfWaiting
+            - weaponType
+            - moodType
+            - car.id
+            - car.cool
+            - -id
+            - -name
+            - -coordinates.x
+            - -coordinates.y
+            - -creation_date
+            - -realHero
+            - -hasToothpick
+            - -impactSpeed
+            - -soundtrackName
+            - -minutesOfWaiting
+            - -weaponType
+            - -moodType
+            - -car.id
+            - -car.cool
+    sortTeam:
+      in: query
+      name: sort
+      required: false
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+          default: id
+          enum:
+            - id
+            - name
+            - -id
+            - -name
+    offset:
+      in: query
+      name: offset
+      required: false
+      schema:
+        type: integer
+      example: 2
+    filter:
+      in: query
+      name: filter
+      description: Массив полей, используемых для фильтрации. Каждый элемент должен содержать название поля и метод фильтрации в квадратных скобках (lte, lt, gte, gt, neq, eq, ~)
+      required: false
+      schema:
+        type: array
+        items:
+          type: string
+          example: id[eq]=1
+      style: deepObject
+      explode: true
+  responses:
+    weapon:
+      type: array
+      items:
+        - $ref: "#/components/schemas/WeaponType"
+    mood:
+      type: array
+      items:
+        - $ref: "#/components/schemas/MoodType"
+    pageHumanBeing:
+      type: object
+      required:
+        - totalItems
+        - humanbeings
+        - totalPages
+        - currentPage
+      properties:
+        totalItems:
+          type: integer
+          nullable: false
+          example:
+            - 10
+        humanbeings:
+          type: array
+          nullable: false
+          items:
+            $ref: "#/components/schemas/HumanBeing"
+        totalPages:
+          type: integer
+          nullable: false
+          example:
+            - 2
+        currentPage:
+          type: integer
+          nullable: false
+          example:
+            - 1
+    pageTeam:
+      type: object
+      required:
+        - totalItems
+        - teams
+        - totalPages
+        - currentPage
+      properties:
+        totalItems:
+          type: integer
+          nullable: false
+          example:
+            - 10
+        teams:
+          type: array
+          nullable: false
+          items:
+            $ref: "#/components/schemas/Team"
+        totalPages:
+          type: integer
+          nullable: false
+          example:
+            - 2
+        currentPage:
+          type: integer
+          nullable: false
+          example:
+            - 1
+    notFoundError:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          nullable: false
+          example:
+            - "Object not found"
+    badRequestError:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          nullable: false
+          example:
+            - "Validation error"
+        fields:
+          type: string
+          nullable: true
+          example:
+            - "field1, field2"
+    unprocessableEntityError:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          nullable: false
+          example:
+            - "Validation error"
+        field:
+          type: array
+          nullable: true
+          items:
+            type: string
+          example:
+            - "field1"
+            - "field2"
+    internalError:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          nullable: false
+          example:
+            - "The service being called is unavailable"
+    defaultError:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          nullable: false
+          example:
+            - "Internal Server Error"
