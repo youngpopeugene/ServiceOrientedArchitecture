@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+	xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="b94bc331-8588-404e-8912-b271018d47dc" basePath="/api/team" >
+		<http:listener-connection host="0.0.0.0" port="14239" >
+			<tls:context />
+		</http:listener-connection>
+	</http:listener-config>
+	<wsc:config name="Web_Service_Consumer_Config" doc:name="Web Service Consumer Config" doc:id="f97c67a2-f75f-4075-a7ed-8c455029ed95" >
+		<wsc:connection wsdlLocation="http://localhost:15239/api/team?wsdl" service="TeamServiceImplService" port="TeamServiceImplPort" address="http://localhost:15239/api/team" />
+	</wsc:config>
+	<flow name="addHumanBeingToTeam" doc:id="1f7e993b-d8ef-4a14-b604-e0530398050e" >
+		<http:listener doc:name="Listener" doc:id="586999b9-5a7a-413f-8d47-8ed638ef8dcb" config-ref="HTTP_Listener_config" path="{teamId}/join/{humanbeingId}" allowedMethods="PATCH, OPTIONS"> 
+			<http:response statusCode="204">
+				<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Access-Control-Allow-Origin" : "*",
+	"Access-Control-Allow-Methods" : "*",
+	"Access-Control-Allow-Headers" : "*",
+	"Access-Control-Allow-Credentials" : "true"
+}]]]></http:headers>
+			</http:response>
+			<http:error-response statusCode="#[vars.code]">
+				<http:body ><![CDATA[#[payload]]]></http:body>
+				<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Access-Control-Allow-Origin" : "*",
+	"Access-Control-Allow-Methods" : "*",
+	"Access-Control-Allow-Headers" : "*",
+	"Access-Control-Allow-Credentials" : "true"
+}]]]></http:headers>
+			</http:error-response>
+		</http:listener>
+		<choice doc:name="Choice" doc:id="7b14bddf-3825-4368-b5bb-844c554c7521" >
+			<when expression="#[attributes.method == 'PATCH']">
+				<ee:transform doc:name="Transform Message" doc:id="2ae64850-7aa4-4b6c-803a-a7dfab441f44">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/xml skipNullOn = "everywhere"
+ns ns0 http://service.teamservicespring.lab4.spring/
+---
+{
+	ns0#addHumanBeingToTeam: {
+		humanbeingId: attributes.uriParams.humanbeingId,
+		teamId: attributes.uriParams.teamId
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<wsc:consume operation="addHumanBeingToTeam" doc:name="Consume" doc:id="1381f2f2-e7dc-47b5-aa17-38a99bd34190" config-ref="Web_Service_Consumer_Config" />
+				<set-payload doc:name="Set Payload" doc:id="75f9dfd8-4eb6-4cad-a2db-c43c2413bba0" value="#[null]" />
+			</when>
+			<otherwise >
+				<set-payload value="#[null]" doc:name="Set Payload" doc:id="b0e77104-c815-4654-a4dd-564e2712e501" />
+			</otherwise>
+		</choice>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="aa40112a-2619-4272-8500-96c67a131999" >
+				<logger level="INFO" doc:name="Logger" doc:id="e8193c0a-ccad-44a3-98c8-f6badaf9b7a7" message="#[error.errorMessage.payload.detail]"/>
+				<ee:transform doc:name="Transform Message" doc:id="f4cbdefd-835d-47a4-be40-15345b30783d" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+var detailStr = error.errorMessage.payload.detail
+var detailObj = read(detailStr default "", "application/xml") // Convert to object
+---
+
+detailObj
+]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<ee:transform doc:name="Transform Message" doc:id="a26557c9-b2b9-4021-8911-6a1f9bd6afdf" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	code: payload.detail.ServiceFaultException.serviceFault.code,
+	payload2: {
+		message: payload.detail.ServiceFaultException.serviceFault.description
+	}
+}
+
+]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="#[payload.code]" doc:name="Set Variable" doc:id="2cbbc010-149e-439b-859f-6c289961041b" variableName="code"/>
+				<ee:transform doc:name="Transform Message" doc:id="fb149587-8ecb-4f62-b4c9-94e0e7ad9f2d" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+error: payload.payload2]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="removeHumanBeingFromTeam" doc:id="c0a9091d-8983-4b61-8972-fce181a7dc8d">
+		<http:listener doc:name="Listener" doc:id="f4a7393d-29bf-4d66-a0ad-77198fc5bb50" config-ref="HTTP_Listener_config" path="{teamId}/unjoin/{humanbeingId}" allowedMethods="DELETE, OPTIONS">
+			<http:response statusCode="204">
+				<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Access-Control-Allow-Origin" : "*",
+	"Access-Control-Allow-Methods" : "*",
+	"Access-Control-Allow-Headers" : "*",
+	"Access-Control-Allow-Credentials" : "true"
+}]]]></http:headers>
+			</http:response>
+			<http:error-response statusCode="#[vars.code]">
+				<http:body ><![CDATA[#[payload]]]></http:body>
+				<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Access-Control-Allow-Origin" : "*",
+	"Access-Control-Allow-Methods" : "*",
+	"Access-Control-Allow-Headers" : "*",
+	"Access-Control-Allow-Credentials" : "true"
+}]]]></http:headers>
+			</http:error-response>
+		</http:listener>
+		<choice doc:name="Choice" doc:id="afd225ac-dbe1-4446-9a6e-b9b85e29ce27" >
+			<when expression="#[attributes.method == 'DELETE']">
+				<ee:transform doc:name="Transform Message" doc:id="63d0d29e-2a88-4efd-83f1-5f960ab3c1ff">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/xml skipNullOn = "everywhere"
+ns ns0 http://service.teamservicespring.lab4.spring/
+---
+{
+	ns0#removeHumanBeingFromTeam: {
+		humanbeingId: attributes.uriParams.humanbeingId,
+		teamId: attributes.uriParams.teamId
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<wsc:consume operation="removeHumanBeingFromTeam" doc:name="Consume" doc:id="585bfcf2-5963-4367-95d4-34735313dab0" config-ref="Web_Service_Consumer_Config" />
+				<set-payload value="#[null]" doc:name="Set Payload" doc:id="5f905348-9e26-4035-9d79-95f78b6880a6" />
+			</when>
+			<otherwise >
+				<set-payload value="#[null]" doc:name="Set Payload" doc:id="e8298653-5ec0-4225-a0d3-77291628b9d8" />
+			</otherwise>
+		</choice>
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="2d7298f0-8ee1-46d7-833d-b37f46f402a5">
+				<logger level="INFO" doc:name="Logger" doc:id="58a752c8-f5d8-4e91-9220-4b1cafe5ef66" message="#[error.errorMessage.payload.detail]" />
+				<ee:transform doc:name="Transform Message" doc:id="7dbd84ba-220e-4aea-8984-c9faf38d9a42">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+var detailStr = error.errorMessage.payload.detail
+var detailObj = read(detailStr default "", "application/xml") // Convert to object
+---
+
+detailObj]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<ee:transform doc:name="Transform Message1" doc:id="2a8a3669-b738-4865-8174-57e1cb64563c">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+{
+	code: payload.detail.ServiceFaultException.serviceFault.code,
+	payload2: {
+		message: payload.detail.ServiceFaultException.serviceFault.description
+	}
+}
+
+]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="#[payload.code]" doc:name="Set Variable" doc:id="27adb51a-0064-4595-8855-7a67e6e86c49" variableName="code" />
+				<ee:transform doc:name="Transform Message2" doc:id="e00e86ed-a2c5-4fde-bb15-72bfd25ec4be">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/xml
+---
+error: payload.payload2]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="makeTeamDepressive" doc:id="a07b2f62-793c-4fde-8659-7638efb9d6cc" >
+		<http:listener doc:name="Listener" doc:id="b349cdab-1ef7-49ef-8879-07a4c026b912" config-ref="HTTP_Listener_config" path="{teamId}/make-depressive" >
+			<http:response statusCode="204">
+				<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Access-Control-Allow-Origin" : "*",
+	"Access-Control-Allow-Methods" : "*",
+	"Access-Control-Allow-Headers" : "*",
+	"Access-Control-Allow-Credentials" : "true"
+}]]]></http:headers>
+			</http:response>
+			<http:error-response statusCode="#[vars.code]">
+				<http:body ><![CDATA[#[payload]]]></http:body>
+				<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Access-Control-Allow-Origin" : "*",
+	"Access-Control-Allow-Methods" : "*",
+	"Access-Control-Allow-Headers" : "*",
+	"Access-Control-Allow-Credentials" : "true"
+}]]]></http:headers>
+			</http:error-response>
+		</http:listener>
+		<choice doc:name="Choice" doc:id="e2e5ea1a-5494-4299-83aa-6fe47174743b" >
+			<when expression="#[attributes.method == 'PATCH']">
+				<ee:transform doc:name="Transform Message" doc:id="fdd2a85f-85a2-40e5-b014-dcb0e795916e">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/xml skipNullOn = "everywhere"
+ns ns0 http://service.teamservicespring.lab4.spring/
+---
+{
+	ns0#makeTeamDepressive: {
+		teamId: attributes.uriParams.teamId
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<wsc:consume operation="makeTeamDepressive" doc:name="Consume" doc:id="6d7cf897-5529-4ae5-8676-716170c36202" config-ref="Web_Service_Consumer_Config" />
+				<set-payload value="#[null]" doc:name="Set Payload" doc:id="bbd9e979-e538-44e5-ad66-74ec32789f96" />
+			</when>
+			<otherwise >
+				<set-payload value="#[null]" doc:name="Set Payload" doc:id="f75f8c62-e936-4179-a74c-255b1cad5f04" />
+			</otherwise>
+		</choice>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="7890b80b-a765-4575-9500-261affc6ae06" >
+				<logger level="INFO" doc:name="Logger" doc:id="554d258b-7dcd-4019-8d80-ed2932ceab73" message="#[error.errorMessage.payload.detail]" />
+				<ee:transform doc:name="Transform Message" doc:id="83d8384e-540f-4928-9e3b-f07879e3c101" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+var detailStr = error.errorMessage.payload.detail
+var detailObj = read(detailStr default "", "application/xml") // Convert to object
+---
+
+detailObj]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<ee:transform doc:name="Transform Message1" doc:id="8a3d6b3f-7a73-4301-80e7-e298835dfe73" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	code: payload.detail.ServiceFaultException.serviceFault.code,
+	payload2: {
+		message: payload.detail.ServiceFaultException.serviceFault.description
+	}
+}
+
+]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="#[payload.code]" doc:name="Set Variable" doc:id="efc1eb88-b0ce-4632-8254-fd3e0b703f8d" variableName="code" />
+				<ee:transform doc:name="Transform Message2" doc:id="9d3ae464-650f-4e19-8720-2bf1d91d2491" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+error: payload.payload2]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="updateTeamCars" doc:id="9a8a4688-cbec-471e-813e-130456dd0ab8" >
+		<http:listener doc:name="Listener" doc:id="0d5fe541-c0bd-4710-8355-bfffce6634c9" config-ref="HTTP_Listener_config" path="{teamId}/car/add" >
+			<http:response statusCode="204">
+				<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Access-Control-Allow-Origin" : "*",
+	"Access-Control-Allow-Methods" : "*",
+	"Access-Control-Allow-Headers" : "*",
+	"Access-Control-Allow-Credentials" : "true"
+}]]]></http:headers>
+			</http:response>
+			<http:error-response statusCode="#[vars.code]">
+				<http:body ><![CDATA[#[payload]]]></http:body>
+				<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Access-Control-Allow-Origin" : "*",
+	"Access-Control-Allow-Methods" : "*",
+	"Access-Control-Allow-Headers" : "*",
+	"Access-Control-Allow-Credentials" : "true"
+}]]]></http:headers>
+			</http:error-response>
+		</http:listener>
+		<choice doc:name="Choice" doc:id="05e85b97-6241-42ef-a197-e100249cef2c" >
+			<when expression="#[attributes.method == 'PATCH']">
+				<ee:transform doc:name="Transform Message" doc:id="06a0eeaa-5fa6-44a7-885f-8f5e3dde1780">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/xml skipNullOn = "everywhere"
+ns ns0 http://service.teamservicespring.lab4.spring/
+---
+{
+	ns0#updateTeamCars: {
+		teamId: attributes.uriParams.teamId
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<wsc:consume operation="updateTeamCars" doc:name="Consume" doc:id="ed0b8ee6-aea9-4888-b908-91de5451ad92" config-ref="Web_Service_Consumer_Config" />
+				<set-payload value="#[null]" doc:name="Set Payload" doc:id="e59ba81f-3506-4e8a-87e3-4cd83316f6c3" />
+			</when>
+			<otherwise >
+				<set-payload value="#[null]" doc:name="Set Payload" doc:id="3f8d6634-274a-46c6-84f7-c0e801a6a8a0" />
+			</otherwise>
+		</choice>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="7d04fd21-d993-4342-a242-372014d5eefb" >
+				<logger level="INFO" doc:name="Logger" doc:id="36dbdad6-148a-4781-800d-45fc6972e8de" message="#[error.errorMessage.payload.detail]" />
+				<ee:transform doc:name="Transform Message" doc:id="21584133-cff0-4ade-8abc-4f7ba0f13d5e" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+var detailStr = error.errorMessage.payload.detail
+var detailObj = read(detailStr default "", "application/xml") // Convert to object
+---
+
+detailObj]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<ee:transform doc:name="Transform Message1" doc:id="62e21064-13dd-4aac-89c0-d15f18d5d6ea" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	code: payload.detail.ServiceFaultException.serviceFault.code,
+	payload2: {
+		message: payload.detail.ServiceFaultException.serviceFault.description
+	}
+}
+
+]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="#[payload.code]" doc:name="Set Variable" doc:id="513a2550-8123-4d2a-91f7-d36fde357e8c" variableName="code" />
+				<ee:transform doc:name="Transform Message2" doc:id="98a6c55e-a0cc-454f-9b1e-2fce19149144" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+error: payload.payload2]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+</mule>

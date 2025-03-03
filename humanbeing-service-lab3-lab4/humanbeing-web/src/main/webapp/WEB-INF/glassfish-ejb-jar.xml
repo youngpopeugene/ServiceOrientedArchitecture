@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE glassfish-ejb-jar PUBLIC "-//GlassFish.org//DTD GlassFish Application Server 3.1 EJB 3.1//EN" "http://glassfish.org/dtds/glassfish-ejb-jar_3_1-1.dtd">
+<glassfish-ejb-jar>
+    <enterprise-beans>
+        <session>
+            <ejb-name>TeamServiceBean</ejb-name>
+            <pool>
+                <steady-pool-size>1</steady-pool-size>
+                <max-pool-size>6</max-pool-size>
+                <pool-resize-quantity>1</pool-resize-quantity>
+            </pool>
+        </session>
+
+        <session>
+            <ejb-name>HumanBeingServiceBean</ejb-name>
+            <pool>
+                <steady-pool-size>1</steady-pool-size>
+                <max-pool-size>6</max-pool-size>
+                <pool-resize-quantity>1</pool-resize-quantity>
+            </pool>
+        </session>
+    </enterprise-beans>
+</glassfish-ejb-jar>
